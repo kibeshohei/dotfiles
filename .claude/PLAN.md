@@ -61,6 +61,13 @@
 - `flake.nix` に `nix-darwin` 入力を追加、`darwinConfigurations` を定義
 - `darwin/default.nix` に brew cask/formula + Touch ID sudo を宣言
 - home-manager を nix-darwin モジュールとして統合（`darwin-rebuild switch` 一発で全適用）
+- Determinate Nix との衝突を `nix.enable = false` で回避
+- `system.primaryUser` を追加（nix-darwin 最新版で必須）
+
+### 7. PR 作成・マージ・ブランチ削除（2026-05-25）
+
+- ブランチ `feat/direnv-nix-direnv` で PR を作成し、main にマージ
+- ローカル・リモートともにブランチを削除済み
 
 ---
 
