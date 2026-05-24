@@ -8,6 +8,11 @@
 
   programs.home-manager.enable = true;
 
+  home.packages = with pkgs; [
+    gh
+    ripgrep
+  ];
+
   programs.git = {
     enable = true;
     settings = {
