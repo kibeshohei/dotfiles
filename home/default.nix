@@ -18,6 +18,9 @@
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim";
 
+  xdg.configFile."wezterm".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/wezterm";
+
   programs.git = {
     enable = true;
     settings = {
