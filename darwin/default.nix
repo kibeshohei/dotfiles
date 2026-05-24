@@ -4,6 +4,8 @@
   nixpkgs.hostPlatform = "aarch64-darwin";
   nixpkgs.config.allowUnfree = true;
 
+  system.primaryUser = "kibeshouhei";
+
   users.users.kibeshouhei = {
     name = "kibeshouhei";
     home = "/Users/kibeshouhei";
