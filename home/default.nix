@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 {
   home.username = "kibeshouhei";
@@ -11,7 +11,12 @@
   home.packages = with pkgs; [
     gh
     ripgrep
+    neovim
   ];
+
+  # nvim 設定は dotfiles リポジトリ直下を直接参照（lazy.nvim が lazy-lock.json を更新できるよう書き込み可能にする）
+  xdg.configFile."nvim".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim";
 
   programs.git = {
     enable = true;
