@@ -68,23 +68,49 @@
 
 ### 必須: nix-darwin の初回適用
 
-ターミナルで以下を実行する（sudo 必要）:
+WezTerm などのターミナルを開いて、以下を **上から順に 1 行ずつ** 実行する。
+
+#### Step 1: nix コマンドを使えるようにする
 
 ```sh
-# nix command not found の場合はまずこれを実行
 source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+```
 
+`nix --version` と打って、バージョンが表示されれば OK。
+`command not found` のままなら Nix 自体の再インストールが必要。
+
+#### Step 2: nix-darwin を初回適用する
+
+```sh
 cd ~/dotfiles
 sudo nix run nix-darwin -- switch --flake ".#kibeshouheinoMacBook-Air-2"
 ```
 
-聞かれたら:
-- `/etc/nix/nix.conf` を nix-darwin に任せるか → Yes
-- `/etc/shells` の上書き → Yes
+パスワードを聞かれたら Mac のログインパスワードを入力。
 
-成功後:
-- `brew uninstall direnv` を実行（Nix 管理に移行済み）
-- 以降の適用コマンドは `darwin-rebuild switch --flake ~/dotfiles#kibeshouheinoMacBook-Air-2`
+途中で質問されたら:
+- `/etc/nix/nix.conf` を nix-darwin に任せるか → **Yes**
+- `/etc/shells` の上書き → **Yes**
+
+エラーなく完了すれば成功。
+
+#### Step 3: 後片付け
+
+```sh
+brew uninstall direnv
+```
+
+direnv は Nix 管理に移行済みなので brew 版を消す。
+
+#### Step 4: 確認
+
+新しいターミナルを開いて以下を実行:
+
+```sh
+darwin-rebuild switch --flake ~/dotfiles#kibeshouheinoMacBook-Air-2
+```
+
+エラーなく完了すれば、今後はこのコマンド 1 つで全設定が適用される。
 
 ### 任意: shellAliases（B-2）
 
