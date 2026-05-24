@@ -1,144 +1,97 @@
-  # dotfiles 次の改善候補
+# dotfiles 改善プラン
 
-  現状の dotfiles（home-manager 経由で管理されているもの）:
-  - zsh（nvm + direnv hook）
-  - git identity
-  - gh / ripgrep / neovim
-  - nvim 設定（~/dotfiles/nvim/）
+## 現在の状態（2026-05-24 時点）
 
-  以下は「これを次にやると価値が高い」候補を、効果と労力で並べたもの。
+### Nix で管理されているもの
 
-  ---
+| カテゴリ | 設定ファイル | 内容 |
+|---------|-------------|------|
+| zsh | `home/zsh.nix` | シェル + nvm 初期化 |
+| direnv + nix-direnv | `home/zsh.nix` | `programs.direnv` で宣言。フック自動注入、flake キャッシュ有効 |
+| git | `home/git.nix` | user.name + noreply email |
+| CLI ツール | `home/packages.nix` | gh, ripgrep |
+| neovim | `home/neovim.nix` | 本体 + `dotfiles/nvim/` を symlink |
+| wezterm | `home/wezterm.nix` | `dotfiles/wezterm/` を symlink |
+| nix-darwin | `darwin/default.nix` | brew cask/formula 管理、Touch ID sudo（**初回適用待ち**） |
 
-  ## A. 今すぐやる価値あり
+### brew に残すもの（移行しない判断）
 
-  ### A-1. WezTerm 設定を dotfiles 化（推奨: 最初にやる）
+- **nvm**: Nix と相性が悪い（動的 PATH 書き換え）。flake devShell 化で段階的に不要になる
+- **postgresql@17**: データを持つサービス。brew services の launchd 連携が便利
 
-  - **対象**: `~/.config/wezterm/wezterm.lua` と `~/.config/wezterm/keybinds.lua`
-  - **やること**: nvim と同じ `mkOutOfStoreSymlink` パターンで dotfiles 配下に移動 → `xdg.configFile."wezterm".source` で参照
-  - **理由**:
-    - 現在のターミナル設定（LEADER キー = Ctrl+q、ペイン操作など）が再現不可能になっている
-    - 新マシンで `wezterm@nightly` を brew cask で入れても、設定が無いと素のキーバインドに戻ってしまう
-    - nvim 移行のパターンが流用できるので作業 15 分程度
-  - **想定変更**: `home/default.nix` に 1 行追加 + ファイルコピー
-  - **リスク**: 低（mkOutOfStoreSymlink は実証済み）
+### やらないもの
 
-  ### A-2. direnv を home.packages へ移行
+- VSCode 設定の Nix 化 → Settings Sync を使う
+- GitHub Actions で dotfiles をビルド検証 → 個人 dotfiles では過剰
+- gpg / ssh 設定の Nix 化 → 秘密情報を扱うので当面触らない
 
-  - **対象**: 現在 brew leaves に残っている `direnv`
-  - **やること**:
-    1. `home.packages` に `direnv` 追加
-    2. `home-manager switch`
-    3. `brew uninstall direnv`
-  - **理由**:
-    - brew leaves が 3 → 2 件（nvm / postgresql のみ）になる
-    - PATH 優先度を考えると Nix 経由が筋
-  - **作業時間**: 5 分
-  - **リスク**: 低（gh/ripgrep の前例あり）
+---
 
-  ### A-3. nix-direnv の導入
+## 完了済み（2026-05-24）
 
-  - **やること**: `programs.direnv.enable = true` + `nix-direnv.enable = true` を home-manager で宣言
-  - **理由**:
-    - `cd` 時に毎回走っている `nix print-dev-env` がキャッシュされる
-    - my-blog 等 flake プロジェクトの `cd` が体感で速くなる（数百ms → 即時）
-    - PLAN.md の Step 3-A 残課題に明記済み
-  - **作業時間**: 15 分
-  - **リスク**: 低（home-manager に組み込まれている標準機能）
-  - **A-2 とセットでやると効率的**（direnv の brew uninstall も同時に）
+### 1. direnv + nix-direnv 導入（A-2 + A-3）
 
-  ---
+- `programs.direnv = { enable = true; nix-direnv.enable = true; }` を追加
+- 手動の `eval "$(direnv hook zsh)"` を削除
+- 効果: flake プロジェクトへの `cd` が 2 回目以降キャッシュヒットで高速化
 
-  ## B. 余裕があれば（中期）
+### 2. WezTerm 設定の dotfiles 化（A-1）
 
-  ### B-1. home/default.nix の分割
+- `wezterm.lua` + `keybinds.lua` を `dotfiles/wezterm/` にコピー
+- `mkOutOfStoreSymlink` で `~/.config/wezterm` にリンク
+- 効果: ターミナル設定（LEADER=Ctrl+q、ペイン操作等）が新マシンで再現可能に
 
-  - **やること**: ファイルが 40 行を超えてきたので、責務ごとに分割
-    home/
-    ├── default.nix    # エントリ（import で集約）
-    ├── zsh.nix
-    ├── git.nix
-    ├── neovim.nix
-    ├── wezterm.nix
-    └── packages.nix
-  - **理由**:
-  - PLAN.md D-005 で想定した構成に近づく
-  - Step 4（nix-darwin）以降で複雑化する前に整理しておくと楽
-  - **作業時間**: 20 分
-  - **リスク**: 中（Nix の import 構文ミスで詰まる可能性、要動作確認）
+### 3. バックアップ削除（D-1, D-2）
 
-  ### B-2. shellAliases を宣言的に
+- `~/.config/nvim.backup`、`~/.zshrc.backup`、`~/.config/wezterm.backup` を削除
 
-  - **やること**: `programs.zsh.shellAliases = { gs = "git status"; ll = "ls -la"; ... };`
-  - **理由**: 普段ターミナルで叩いてる alias を Nix 管理に
-  - **前提**: 「どの alias を入れるか」のリストアップが必要（→ ユーザーに聞く必要あり）
-  - **作業時間**: 5 分（リストが揃っていれば）
+### 4. home/default.nix の分割（B-1）
 
-  ### B-3. README の充実
+- 1 ファイルだった設定を責務ごとに分割:
+  - `default.nix`（imports のみ）
+  - `packages.nix` / `neovim.nix` / `wezterm.nix` / `git.nix` / `zsh.nix`
+- `home-manager switch` で動作確認済み
 
-  - **やること**: 現在は前提・clone・switch のみ。以下を追記:
-  - 構成図（どのファイルが何をしているか）
-  - ロールバック手順（home-manager generations の使い方）
-  - 新ツールを追加する時のフロー
-  - **理由**: 他人だけでなく **未来の自分** が忘れた時の救済
-  - **作業時間**: 30 分
+### 5. README 充実（B-3）
 
-  ---
+- 構成図、ロールバック手順、ツール追加フローを追記
 
-  ## C. Step 4 の準備として
+### 6. nix-darwin 構造作成（C-1）
 
-  ### C-1. flake.nix を nix-darwin 対応構造へ
+- `flake.nix` に `nix-darwin` 入力を追加、`darwinConfigurations` を定義
+- `darwin/default.nix` に brew cask/formula + Touch ID sudo を宣言
+- home-manager を nix-darwin モジュールとして統合（`darwin-rebuild switch` 一発で全適用）
 
-  - **やること**: 現在 `homeConfigurations.kibeshouhei` 1 つだけ → `darwinConfigurations.<host>` も追加する余地を作る
-  ```nix
-  outputs = { ... }: {
-    homeConfigurations."kibeshouhei" = ...;
-    darwinConfigurations."<hostname>" = ...;  # Step 4 で追加
-  };
-  - 理由: Step 4 着手時に flake 構造を一気に変えるとリスクが上がるため、骨組みだけ先に作る
-  - 作業時間: Step 4 と一体化できるので単独では不要
+---
 
-  ---
-  D. 雑務（小さいけど忘れがち）
+## 次にやること
 
-  D-1. ~/.config/nvim.backup を削除
+### 必須: nix-darwin の初回適用
 
-  - Step 3-D で退避させた旧 nvim 設定。問題なく動作確認できているので不要
-  - rm -rf ~/.config/nvim.backup 1 行
+ターミナルで以下を実行する（sudo 必要）:
 
-  D-2. ~/.zshrc.backup の扱い
+```sh
+cd ~/dotfiles
+sudo nix run nix-darwin -- switch --flake ".#kibeshouheinoMacBook-Air-2"
+```
 
-  - Step 3-A で生成された退避ファイル。home-manager 化が安定したので削除可能
-  - rm ~/.zshrc.backup
+聞かれたら:
+- `/etc/nix/nix.conf` を nix-darwin に任せるか → Yes
+- `/etc/shells` の上書き → Yes
 
-  ---
-  おすすめ実行順
+成功後:
+- `brew uninstall direnv` を実行（Nix 管理に移行済み）
+- 以降の適用コマンドは `darwin-rebuild switch --flake ~/dotfiles#kibeshouheinoMacBook-Air-2`
 
-  1. A-2 + A-3 をまとめて（direnv + nix-direnv、20 分、brew leaves 削減 + 体感速度向上）
-  2. A-1 WezTerm 移行（15 分、設定の再現性が完成）
-  3. D-1, D-2 バックアップ削除（1 分）
-  4. B-1 ファイル分割（20 分、見通し改善）
-  5. ここまでで dotfiles の「ユーザー領域 100%」が達成、Step 4 へ進む準備が整う
+### 任意: shellAliases（B-2）
 
-  ---
-  ## 完了済み
+普段使っている alias をリストアップして `home/zsh.nix` に追加。
 
-  ### A-2 + A-3: direnv + nix-direnv（2026-05-24 完了）
+---
 
-  - `programs.direnv = { enable = true; nix-direnv.enable = true; }` を追加
-  - 手動の `eval "$(direnv hook zsh)"` を削除（home-manager が自動注入）
-  - `brew uninstall direnv` で brew 版を削除可能に
-  - 結果: brew leaves が nvm + postgresql の 2 つに減少、flake プロジェクトへの cd が 2 回目以降キャッシュヒットで高速化
+## 適用コマンド早見表
 
-  ---
-  ## brew に残すもの（移行しない判断）
-
-  - **nvm**: Nix と相性が悪い（動的 PATH 書き換え）。flake devShell 化が進めば自然に不要になる。Nix 化の対象外
-  - **postgresql**: データを持つサービス。brew services の launchd 連携が便利。nix-darwin（Step 4）まで触らない
-
-  ---
-  「やらない方がいいもの」（参考）
-
-  - VSCode 設定の Nix 化: settings.json は Nix で書くと辛い。VSCode の Settings Sync を使うのが筋
-  - GitHub Actions で dotfiles をビルド検証: 個人 dotfiles では過剰、本人が home-manager switch で気づく
-  - gpg / ssh 設定の Nix 化: 秘密情報を扱うので慎重に。今は brew/system のまま
+| 状態 | コマンド |
+|------|---------|
+| nix-darwin 適用前（現在） | `home-manager switch --flake ~/dotfiles#kibeshouhei` |
+| nix-darwin 適用後 | `darwin-rebuild switch --flake ~/dotfiles#kibeshouheinoMacBook-Air-2` |
