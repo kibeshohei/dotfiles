@@ -36,9 +36,11 @@
       [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
       # <<< nvm initialize <<<
 
-      # >>> direnv initialize >>>
-      eval "$(direnv hook zsh)"
-      # <<< direnv initialize <<<
     '';
+  };
+
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
   };
 }
