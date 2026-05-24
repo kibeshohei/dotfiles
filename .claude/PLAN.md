@@ -71,6 +71,9 @@
 ターミナルで以下を実行する（sudo 必要）:
 
 ```sh
+# nix command not found の場合はまずこれを実行
+source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
 cd ~/dotfiles
 sudo nix run nix-darwin -- switch --flake ".#kibeshouheinoMacBook-Air-2"
 ```
