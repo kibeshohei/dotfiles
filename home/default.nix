@@ -7,6 +7,7 @@
     ./wezterm.nix
     ./git.nix
     ./zsh.nix
+    ./zed.nix
   ];
 
   home.username = "kibeshouhei";

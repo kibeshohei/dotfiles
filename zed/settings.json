@@ -1,0 +1,12 @@
+{
+  "vim_mode": false,
+  "base_keymap": "VSCode",
+  "agent_servers": {
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "theme": "One Dark",
+  "ui_font_size": 14,
+  "buffer_font_size": 14
+}
