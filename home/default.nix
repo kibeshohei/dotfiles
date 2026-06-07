@@ -8,6 +8,7 @@
     ./git.nix
     ./zsh.nix
     ./zed.nix
+    ./claude.nix
   ];
 
   home.username = "kibeshouhei";
