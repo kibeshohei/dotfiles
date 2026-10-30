@@ -5,5 +5,6 @@
     gh
     ripgrep
     zed-editor
+    semgrep
   ];
 }

@@ -19,10 +19,10 @@
 
   homebrew = {
     enable = true;
-    onActivation.cleanup = "zap";
+    onActivation.cleanup = "none";
     casks = [
+      "docker-desktop"
       "raycast"
-      "visual-studio-code"
       "wezterm@nightly"
     ];
     brews = [
